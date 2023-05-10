@@ -22,7 +22,7 @@
 # # API Options
 # api_addr: ":8090"
 server:
-- appname: live
+- appName: catLive
   live: true
   hls: true
   api: true

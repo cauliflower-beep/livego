@@ -2,11 +2,11 @@ package configure
 
 import (
 	"fmt"
-
-	"livego/utils/uid"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
+	"livego/utils/uid"
 )
 
 type RoomKeysType struct {
@@ -32,7 +32,7 @@ func Init() {
 		DB:       0,
 	})
 
-	_, err := RoomKeys.redisCli.Ping().Result()
+	_, err := RoomKeys.redisCli.Ping(nil).Result()
 	if err != nil {
 		log.Panic("Redis: ", err)
 	}
@@ -45,13 +45,13 @@ func (r *RoomKeysType) SetKey(channel string) (key string, err error) {
 	if !saveInLocal {
 		for {
 			key = uid.RandStringRunes(48)
-			if _, err = r.redisCli.Get(key).Result(); err == redis.Nil {
-				err = r.redisCli.Set(channel, key, 0).Err()
+			if _, err = r.redisCli.Get(nil, key).Result(); err == redis.Nil {
+				err = r.redisCli.Set(nil, channel, key, 0).Err()
 				if err != nil {
 					return
 				}
 
-				err = r.redisCli.Set(key, channel, 0).Err()
+				err = r.redisCli.Set(nil, key, channel, 0).Err()
 				return
 			} else if err != nil {
 				return
@@ -72,7 +72,7 @@ func (r *RoomKeysType) SetKey(channel string) (key string, err error) {
 
 func (r *RoomKeysType) GetKey(channel string) (newKey string, err error) {
 	if !saveInLocal {
-		if newKey, err = r.redisCli.Get(channel).Result(); err == redis.Nil {
+		if newKey, err = r.redisCli.Get(nil, channel).Result(); err == redis.Nil {
 			newKey, err = r.SetKey(channel)
 			log.Debugf("[KEY] new channel [%s]: %s", channel, newKey)
 			return
@@ -93,7 +93,7 @@ func (r *RoomKeysType) GetKey(channel string) (newKey string, err error) {
 
 func (r *RoomKeysType) GetChannel(key string) (channel string, err error) {
 	if !saveInLocal {
-		return r.redisCli.Get(key).Result()
+		return r.redisCli.Get(nil, key).Result()
 	}
 
 	chann, found := r.localCache.Get(key)
@@ -106,7 +106,7 @@ func (r *RoomKeysType) GetChannel(key string) (channel string, err error) {
 
 func (r *RoomKeysType) DeleteChannel(channel string) bool {
 	if !saveInLocal {
-		return r.redisCli.Del(channel).Err() != nil
+		return r.redisCli.Del(nil, channel).Err() != nil
 	}
 
 	key, ok := r.localCache.Get(channel)
@@ -120,7 +120,7 @@ func (r *RoomKeysType) DeleteChannel(channel string) bool {
 
 func (r *RoomKeysType) DeleteKey(key string) bool {
 	if !saveInLocal {
-		return r.redisCli.Del(key).Err() != nil
+		return r.redisCli.Del(nil, key).Err() != nil
 	}
 
 	channel, ok := r.localCache.Get(key)

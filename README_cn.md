@@ -1,14 +1,11 @@
-<p align='center'>
-    <img src='./logo.png' width='200px' height='80px'/>
-</p>
+## 关于livego
 
-[![Test](https://livego/workflows/Test/badge.svg)](https://livego/actions?query=workflow%3ATest)
-[![Release](https://livego/workflows/Release/badge.svg)](https://livego/actions?query=workflow%3ARelease)
-
-简单高效的直播服务器：
+livego是一个简单高效的直播服务器，具备以下特点：
 - 安装和使用非常简单；
 - 纯 Golang 编写，性能高，跨平台；
 - 支持常用的传输协议、文件格式、编码格式；
+
+后台使用 RTMP 协议接收来自客户端的音视频流，并将其转发到 HLS 和 HTTP-FLV 协议。
 
 #### 支持的传输协议
 - RTMP

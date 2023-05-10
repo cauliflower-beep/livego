@@ -132,9 +132,10 @@ func startAPI(stream *rtmp.RtmpStream) {
 }
 
 func init() {
+	// 设置日志输出格式
 	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
-		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+		FullTimestamp: true, // 完整时间戳
+		CallerPrettyfier: func(f *runtime.Frame) (string, string) { // 调用者信息
 			filename := path.Base(f.File)
 			return fmt.Sprintf("%s()", f.Function), fmt.Sprintf(" %s:%d", filename, f.Line)
 		},
@@ -158,8 +159,8 @@ func main() {
         version: %s
 	`, VERSION)
 
-	apps := configure.Applications{}
-	configure.Config.UnmarshalKey("server", &apps)
+	apps := configure.Applications{} // 客户端列表
+	_ = configure.Config.UnmarshalKey("server", &apps)
 	for _, app := range apps {
 		stream := rtmp.NewRtmpStream()
 		var hlsServer *hls.Server

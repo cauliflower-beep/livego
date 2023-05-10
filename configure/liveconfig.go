@@ -24,8 +24,9 @@ import (
 }
 */
 
+// Application 客户端对象
 type Application struct {
-	Appname    string   `mapstructure:"appname"`
+	AppName    string   `mapstructure:"appName"`
 	Live       bool     `mapstructure:"live"`
 	Hls        bool     `mapstructure:"hls"`
 	Flv        bool     `mapstructure:"flv"`
@@ -75,7 +76,7 @@ var defaultConf = ServerCfg{
 	EnableTLSVerify: true,
 	GopNum:          1,
 	Server: Applications{{
-		Appname:    "live",
+		AppName:    "live",
 		Live:       true,
 		Hls:        true,
 		Flv:        true,
@@ -91,7 +92,7 @@ var (
 	// value to True at compile time.
 	//
 	// go build -ldflags "-X 'livego/configure.BypassInit=true'" -o livego main.go
-	BypassInit string = ""
+	BypassInit = "" // 是否跳过init()
 )
 
 func initLog() {
@@ -110,12 +111,12 @@ func init() {
 func initDefault() {
 	defer Init()
 
-	// Default config
-	b, _ := json.Marshal(defaultConf)
-	defaultConfig := bytes.NewReader(b)
-	viper.SetConfigType("json")
-	viper.ReadConfig(defaultConfig)
-	Config.MergeConfigMap(viper.AllSettings())
+	// Default config 目的是在没有配置文件的情况下，使用默认配置
+	b, _ := json.Marshal(defaultConf)              // 将defaultConf结构体转换为json格式的字节数组b
+	defaultConfig := bytes.NewReader(b)            // 把b封装为bytes.Reader类型的defaultConfig
+	viper.SetConfigType("json")                    // 设置配置类型为json格式
+	_ = viper.ReadConfig(defaultConfig)            // 读取配置文件
+	_ = Config.MergeConfigMap(viper.AllSettings()) // 将读取到的配置合并到全局配置中
 
 	// Flags
 	pflag.String("rtmp_addr", ":1935", "RTMP server listen address")
@@ -134,7 +135,7 @@ func initDefault() {
 	pflag.Int("gop_num", 1, "gop num")
 	pflag.Bool("enable_tls_verify", true, "Use system root CA to verify RTMPS connection, set this flag to false on Windows")
 	pflag.Parse()
-	Config.BindPFlags(pflag.CommandLine)
+	_ = Config.BindPFlags(pflag.CommandLine)
 
 	// File
 	Config.SetConfigFile(Config.GetString("config_file"))
@@ -166,7 +167,7 @@ func CheckAppName(appname string) bool {
 	apps := Applications{}
 	Config.UnmarshalKey("server", &apps)
 	for _, app := range apps {
-		if app.Appname == appname {
+		if app.AppName == appname {
 			return app.Live
 		}
 	}
@@ -177,7 +178,7 @@ func GetStaticPushUrlList(appname string) ([]string, bool) {
 	apps := Applications{}
 	Config.UnmarshalKey("server", &apps)
 	for _, app := range apps {
-		if (app.Appname == appname) && app.Live {
+		if (app.AppName == appname) && app.Live {
 			if len(app.StaticPush) > 0 {
 				return app.StaticPush, true
 			} else {
