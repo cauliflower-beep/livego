@@ -99,7 +99,6 @@ func hsCreate2(p []byte, key []byte) {
 
 func (conn *Conn) HandshakeClient() (err error) {
 	var random [(1 + 1536*2) * 2]byte
-
 	C0C1C2 := random[:1536*2+1]
 	C0 := C0C1C2[:1]
 	C0C1 := C0C1C2[:1536+1]
@@ -140,47 +139,58 @@ func (conn *Conn) HandshakeClient() (err error) {
 	return
 }
 
+// HandshakeServer
+// @Description: RTMP 握手函数，用于建立客户端和服务器之间的连接
+// @Description: 这个握手规则是 RTMP 协议规定的，照着流程走就行了
 func (conn *Conn) HandshakeServer() (err error) {
 	var random [(1 + 1536*2) * 2]byte
 
-	C0C1C2 := random[:1536*2+1]
+	// C0C1C2 为客户端发送的三个包
+	C0C1C2 := random[:1+1536*2]
 	C0 := C0C1C2[:1]
 	C1 := C0C1C2[1 : 1536+1]
+	// 客户端开始发送 COC1
 	C0C1 := C0C1C2[:1536+1]
+	// 收到S1之后 发送C2
 	C2 := C0C1C2[1536+1:]
+	// 客户端收到S2之后才开始发送其他信息，控制信息和音视频数据
 
-	S0S1S2 := random[1536*2+1:]
+	// S0S1S2 为服务器发送的三个包
+	S0S1S2 := random[1+1536*2:]
 	S0 := S0S1S2[:1]
 	S1 := S0S1S2[1 : 1536+1]
+	// 服务器收到C0之后才开始发送S0和S1
 	S0S1 := S0S1S2[:1536+1]
+	// 等到C1之后才能发送S2
 	S2 := S0S1S2[1536+1:]
+	// 服务器必须等收到C2之后才能发送其他数据，控制信息和音视频数据
 
 	// < C0C1
-	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	_ = conn.Conn.SetDeadline(time.Now().Add(timeout))
 	if _, err = io.ReadFull(conn.rw, C0C1); err != nil {
 		return
 	}
-	conn.Conn.SetDeadline(time.Now().Add(timeout))
-	if C0[0] != 3 {
+	_ = conn.Conn.SetDeadline(time.Now().Add(timeout))
+	if C0[0] != 3 { // 检查版本号是否为3
 		err = fmt.Errorf("rtmp: handshake version=%d invalid", C0[0])
 		return
 	}
 
 	S0[0] = 3
 
-	clitime := pio.U32BE(C1[0:4])
-	srvtime := clitime
-	srvver := uint32(0x0d0e0a0d)
-	cliver := pio.U32BE(C1[4:8])
+	cliTime := pio.U32BE(C1[0:4])
+	srvTime := cliTime
+	srvVer := uint32(0x0d0e0a0d)
+	cliVer := pio.U32BE(C1[4:8])
 
-	if cliver != 0 {
+	if cliVer != 0 {
 		var ok bool
 		var digest []byte
 		if ok, digest = hsParse1(C1, hsClientPartialKey, hsServerFullKey); !ok {
 			err = fmt.Errorf("rtmp: handshake server: C1 invalid")
 			return
 		}
-		hsCreate01(S0S1, srvtime, srvver, hsServerPartialKey)
+		hsCreate01(S0S1, srvTime, srvVer, hsServerPartialKey)
 		hsCreate2(S2, digest)
 	} else {
 		copy(S1, C2)
@@ -188,20 +198,20 @@ func (conn *Conn) HandshakeServer() (err error) {
 	}
 
 	// > S0S1S2
-	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	_ = conn.Conn.SetDeadline(time.Now().Add(timeout))
 	if _, err = conn.rw.Write(S0S1S2); err != nil {
 		return
 	}
-	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	_ = conn.Conn.SetDeadline(time.Now().Add(timeout))
 	if err = conn.rw.Flush(); err != nil {
 		return
 	}
 
 	// < C2
-	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	_ = conn.Conn.SetDeadline(time.Now().Add(timeout))
 	if _, err = io.ReadFull(conn.rw, C2); err != nil {
 		return
 	}
-	conn.Conn.SetDeadline(time.Time{})
+	_ = conn.Conn.SetDeadline(time.Time{})
 	return
 }

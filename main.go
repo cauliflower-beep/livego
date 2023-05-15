@@ -19,6 +19,7 @@ import (
 
 var VERSION = "master"
 
+// startHls 启动hls服务器
 func startHls() *hls.Server {
 	hlsAddr := configure.Config.GetString("hls_addr")
 	hlsListen, err := net.Listen("tcp", hlsAddr)
@@ -39,12 +40,15 @@ func startHls() *hls.Server {
 	return hlsServer
 }
 
+// startRtmp
+// @Description: 启动 RTMP 服务器. RTMP 协议也是基于 tcp 的应用层协议
 func startRtmp(stream *rtmp.RtmpStream, hlsServer *hls.Server) {
 	rtmpAddr := configure.Config.GetString("rtmp_addr")
 	isRtmps := configure.Config.GetBool("enable_rtmps")
 
 	var rtmpListen net.Listener
-	if isRtmps {
+	// rtmps 与 rtmp 大概就是 https 和 http 的区别吧，多了一个 tls 握手的过程
+	if isRtmps { // 启动 rtmps 服务器
 		certPath := configure.Config.GetString("rtmps_cert")
 		keyPath := configure.Config.GetString("rtmps_key")
 		cert, err := tls.LoadX509KeyPair(certPath, keyPath)
@@ -58,7 +62,7 @@ func startRtmp(stream *rtmp.RtmpStream, hlsServer *hls.Server) {
 		if err != nil {
 			log.Fatal(err)
 		}
-	} else {
+	} else { // 启动普通的 rtmp 服务器
 		var err error
 		rtmpListen, err = net.Listen("tcp", rtmpAddr)
 		if err != nil {
@@ -68,7 +72,8 @@ func startRtmp(stream *rtmp.RtmpStream, hlsServer *hls.Server) {
 
 	var rtmpServer *rtmp.Server
 
-	if hlsServer == nil {
+	// hlsServer接收客户端的 HLS 请求，并将 RTMP 流转换为 HLS 流进行传输
+	if hlsServer == nil { // hls服务器被禁用
 		rtmpServer = rtmp.NewRtmpServer(stream, nil)
 		log.Info("HLS server disable....")
 	} else {
@@ -86,7 +91,7 @@ func startRtmp(stream *rtmp.RtmpStream, hlsServer *hls.Server) {
 	} else {
 		log.Info("RTMP Listen On ", rtmpAddr)
 	}
-	rtmpServer.Serve(rtmpListen)
+	_ = rtmpServer.Serve(rtmpListen)
 }
 
 func startHTTPFlv(stream *rtmp.RtmpStream) {
@@ -159,6 +164,10 @@ func main() {
         version: %s
 	`, VERSION)
 
+	// 这里为啥会有花括号呀 todo
+	// configure.Applications 定义为 []Application
+	// 那我是不是可以理解为 configure.Applications{} 就是 []Application{}
+	// 看上去正常了吧，这个就是普通切片，例如[]int{}的定义方式
 	apps := configure.Applications{} // 客户端列表
 	_ = configure.Config.UnmarshalKey("server", &apps)
 	for _, app := range apps {

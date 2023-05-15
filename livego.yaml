@@ -1,0 +1,29 @@
+# # Logger level
+# level: info
+
+# # FLV Options
+# flv_archive: false
+# flv_dir: "./tmp"
+# httpflv_addr: ":7001"
+
+# # RTMP Options
+# rtmp_noauth: false
+ rtmp_addr: ":9091"
+ enable_rtmps: false
+# rtmps_cert: server.crt
+# rtmps_key: server.key
+# read_timeout: 10
+# write_timeout: 10
+
+# # HLS Options
+ hls_addr: ":9101"
+#use_hls_https: true
+
+# # API Options
+# api_addr: ":8090"
+server:
+- appName: lufy
+  live: true
+  hls: true
+  api: true
+  flv: true

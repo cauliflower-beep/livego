@@ -77,6 +77,7 @@ func NewRtmpServer(h av.Handler, getter av.GetWriter) *Server {
 	}
 }
 
+// Serve rtmpServer rtmp服务器主逻辑
 func (s *Server) Serve(listener net.Listener) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -85,21 +86,24 @@ func (s *Server) Serve(listener net.Listener) (err error) {
 	}()
 
 	for {
-		var netconn net.Conn
-		netconn, err = listener.Accept()
+		var netConn net.Conn
+		netConn, err = listener.Accept()
 		if err != nil {
 			return
 		}
-		conn := core.NewConn(netconn, 4*1024)
+		conn := core.NewConn(netConn, 4*1024)
 		log.Debug("new client, connect remote: ", conn.RemoteAddr().String(),
 			"local:", conn.LocalAddr().String())
 		go s.handleConn(conn)
 	}
 }
 
+// handleConn
+// @Description: 每新建一个连接，就启动一个goroutine去处理连接请求
 func (s *Server) handleConn(conn *core.Conn) error {
+	// 前面的accept函数建立的是tcp连接，如果想要建立 RTMP 连接，还需要进行 RTMP 的握手过程
 	if err := conn.HandshakeServer(); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		log.Error("handleConn HandshakeServer err: ", err)
 		return err
 	}
@@ -283,7 +287,6 @@ func (v *VirWriter) DropPacket(pktQue chan *av.Packet, info av.Info) {
 	log.Debug("packet queue len: ", len(pktQue))
 }
 
-//
 func (v *VirWriter) Write(p *av.Packet) (err error) {
 	err = nil
 
