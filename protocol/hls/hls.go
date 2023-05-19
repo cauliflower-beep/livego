@@ -39,6 +39,7 @@ type Server struct {
 	conns    *sync.Map
 }
 
+// NewServer 创建hls服务器
 func NewServer() *Server {
 	ret := &Server{
 		conns: &sync.Map{},

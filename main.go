@@ -19,10 +19,11 @@ import (
 
 var VERSION = "master"
 
-// startHls 启动hls服务器
+// startHls 启动hls服务器 将 RTMP流 转换为 HLS流 进行传输
 func startHls() *hls.Server {
 	hlsAddr := configure.Config.GetString("hls_addr")
 	hlsListen, err := net.Listen("tcp", hlsAddr)
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,8 +41,7 @@ func startHls() *hls.Server {
 	return hlsServer
 }
 
-// startRtmp
-// @Description: 启动 RTMP 服务器. RTMP 协议也是基于 tcp 的应用层协议
+// startRtmp 启动 RTMP 服务器. RTMP 协议也是基于 tcp 的应用层协议
 func startRtmp(stream *rtmp.RtmpStream, hlsServer *hls.Server) {
 	rtmpAddr := configure.Config.GetString("rtmp_addr")
 	isRtmps := configure.Config.GetBool("enable_rtmps")
@@ -164,9 +164,8 @@ func main() {
         version: %s
 	`, VERSION)
 
-	// 这里为啥会有花括号呀 todo
 	// configure.Applications 定义为 []Application
-	// 那我是不是可以理解为 configure.Applications{} 就是 []Application{}
+	// 花括号可以理解为 configure.Applications{} 就是 []Application{}
 	// 看上去正常了吧，这个就是普通切片，例如[]int{}的定义方式
 	apps := configure.Applications{} // 客户端列表
 	_ = configure.Config.UnmarshalKey("server", &apps)

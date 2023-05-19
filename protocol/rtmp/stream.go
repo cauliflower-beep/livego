@@ -17,9 +17,10 @@ var (
 	EmptyID = ""
 )
 
-// RtmpStream
-// @Description: RTMP流. 应用自己实现的协议
+// RtmpStream RTMP流. 应用自己实现的协议
 type RtmpStream struct {
+	// 用的漂亮 这里会有多个 goroutine 来共享一个map，比如心跳检测、视频推流等不同goroutine，所以可以用并发安全的sync.Map
+	// sync.Map没有len方法，无法获取长度，并且键和值必须是可比较的类型
 	streams *sync.Map //key
 }
 
@@ -76,13 +77,14 @@ func (rs *RtmpStream) GetStreams() *sync.Map {
 	return rs.streams
 }
 
+// CheckAlive 维护rs.streams存活状态
 func (rs *RtmpStream) CheckAlive() {
 	for {
 		<-time.After(5 * time.Second)
 		rs.streams.Range(func(key, val interface{}) bool {
 			v := val.(*Stream)
 			if v.CheckAlive() == 0 {
-				rs.streams.Delete(key)
+				rs.streams.Delete(key) // 若某个流不再存活，就从map中删除
 			}
 			return true
 		})

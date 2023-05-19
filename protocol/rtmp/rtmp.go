@@ -98,8 +98,7 @@ func (s *Server) Serve(listener net.Listener) (err error) {
 	}
 }
 
-// handleConn
-// @Description: 每新建一个连接，就启动一个goroutine去处理连接请求
+// handleConn 每新建一个连接，就启动一个goroutine去处理连接请求
 func (s *Server) handleConn(conn *core.Conn) error {
 	// 前面的accept函数建立的是tcp连接，如果想要建立 RTMP 连接，还需要进行 RTMP 的握手过程
 	if err := conn.HandshakeServer(); err != nil {
@@ -107,7 +106,8 @@ func (s *Server) handleConn(conn *core.Conn) error {
 		log.Error("handleConn HandshakeServer err: ", err)
 		return err
 	}
-	connServer := core.NewConnServer(conn)
+
+	connServer := core.NewConnServer(conn) // 封装连接
 
 	if err := connServer.ReadMsg(); err != nil {
 		conn.Close()
@@ -119,7 +119,7 @@ func (s *Server) handleConn(conn *core.Conn) error {
 
 	if ret := configure.CheckAppName(appname); !ret {
 		err := fmt.Errorf("application name=%s is not configured", appname)
-		conn.Close()
+		_ = conn.Close()
 		log.Error("CheckAppName err: ", err)
 		return err
 	}
